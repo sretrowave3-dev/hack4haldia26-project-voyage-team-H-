@@ -1,189 +1,265 @@
 /**
  * CanteenPulse • Shahi Dhaba & Royal KDS
- * Accurate food item mapping & high-definition photography
+ * Complete culinary system featuring:
+ * - Title-accurate high-resolution food thumbnails
+ * - Star rating system with pseudo pre-ratings & user rating persistence
+ * - Advanced sorting: Most Ordered, Most Rated, Top Rating, Price High-to-Low, Price Low-to-High
+ * - Out of Stock thumbnail overlays and live kitchen stock toggle
+ * - Finite State Machine order lifecycle & executive management intelligence
  */
 
+// ==========================================
+// 1. DATA MODELS & MENU (TITLE-REFERENCED)
+// ==========================================
 const INDIAN_MENU = [
-  // --- 24/7 All-Day Beverages ---
+  // --- LUNCH / TRADITIONAL MAINS (Referenced from Indian Kitchen Staples) ---
+  {
+    id: 'ln1',
+    name: 'Crispy Paper-Thin Rava Dosa',
+    price: 110,
+    shift: 'lunch',
+    category: 'meal',
+    diet: 'veg',
+    image: 'https://images.unsplash.com/photo-1668236543090-82eba5ee5976?w=600&auto=format&fit=crop&q=80',
+    desc: 'Crispy semolina & rice batter dosa served with fresh coconut chutney & hot sambar.',
+    rating: 4.8,
+    ratingCount: 184,
+    orderCount: 142,
+    inStock: true
+  },
+  {
+    id: 'ln2',
+    name: 'Steamed Oats Idly & Peanut Dip',
+    price: 85,
+    shift: 'lunch',
+    category: 'meal',
+    diet: 'veg',
+    image: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=600&auto=format&fit=crop&q=80',
+    desc: 'Nutrient-rich soft oats idlis paired with spiced peanut chutney and lentil stew.',
+    rating: 4.6,
+    ratingCount: 96,
+    orderCount: 68,
+    inStock: true
+  },
+  {
+    id: 'ln3',
+    name: 'Homestyle Matar Poha',
+    price: 60,
+    shift: 'lunch',
+    category: 'meal',
+    diet: 'veg',
+    image: 'https://images.unsplash.com/photo-1626777552726-4a6b54c97e46?w=600&auto=format&fit=crop&q=80',
+    desc: 'Rinsed flattened rice tempered with green peas, onions, roasted peanuts and lemon.',
+    rating: 4.5,
+    ratingCount: 112,
+    orderCount: 85,
+    inStock: true
+  },
+  {
+    id: 'ln4',
+    name: 'Western Sabudana Khichdi',
+    price: 80,
+    shift: 'lunch',
+    category: 'meal',
+    diet: 'veg',
+    image: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?w=600&auto=format&fit=crop&q=80',
+    desc: 'Soaked tapioca pearls sautéed with cumin, green chilies, diced potatoes and crushed peanuts.',
+    rating: 4.4,
+    ratingCount: 74,
+    orderCount: 48,
+    inStock: false // Out of stock initially to demonstrate the out of stock sign
+  },
+  {
+    id: 'ln5',
+    name: 'Desi Ghee Aloo Paratha Thali',
+    price: 95,
+    shift: 'lunch',
+    category: 'meal',
+    diet: 'veg',
+    image: 'https://images.unsplash.com/photo-1626132647523-66f5bf380027?w=600&auto=format&fit=crop&q=80',
+    desc: 'Golden charred flatbread stuffed with spiced potato mash, served with white butter & curd.',
+    rating: 4.9,
+    ratingCount: 260,
+    orderCount: 198,
+    inStock: true
+  },
+  {
+    id: 'ln6',
+    name: 'Shahi Dal Makhani & Jeera Rice',
+    price: 150,
+    shift: 'lunch',
+    category: 'meal',
+    diet: 'veg',
+    image: 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=600&auto=format&fit=crop&q=80',
+    desc: 'Slow-simmered black lentils with butter and cream, served with basmati rice.',
+    rating: 4.7,
+    ratingCount: 215,
+    orderCount: 156,
+    inStock: true
+  },
+
+  // --- SNACKS & QUICK BITES ---
+  {
+    id: 'sn1',
+    name: 'Crispy Chicken Fried Bites',
+    price: 160,
+    shift: 'snacks',
+    category: 'meal',
+    diet: 'nonveg',
+    image: 'https://images.unsplash.com/photo-1626082927389-6cd097cdc6ec?w=600&auto=format&fit=crop&q=80',
+    desc: 'Golden seasoned deep-fried chicken tenders coated in crispy herb crust with garlic dip.',
+    rating: 4.8,
+    ratingCount: 235,
+    orderCount: 182,
+    inStock: true
+  },
+  {
+    id: 'sn2',
+    name: 'Loaded Double Cheese Burger',
+    price: 130,
+    shift: 'snacks',
+    category: 'meal',
+    diet: 'nonveg',
+    image: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?w=600&auto=format&fit=crop&q=80',
+    desc: 'Juicy spiced grilled patty with cheddar cheese slice, caramelized onions and spicy mayo.',
+    rating: 4.7,
+    ratingCount: 204,
+    orderCount: 165,
+    inStock: true
+  },
+  {
+    id: 'sn3',
+    name: 'Spiced Tomato Penne Pasta',
+    price: 110,
+    shift: 'snacks',
+    category: 'meal',
+    diet: 'veg',
+    image: 'https://images.unsplash.com/photo-1621996346565-e3d5d6281691?w=600&auto=format&fit=crop&q=80',
+    desc: 'Penne pasta tossed in roasted arrabbiata tomato sauce, garlic, basil and herbs.',
+    rating: 4.5,
+    ratingCount: 128,
+    orderCount: 92,
+    inStock: true
+  },
+  {
+    id: 'sn4',
+    name: 'Glazed Spiced Meatball Bites',
+    price: 140,
+    shift: 'snacks',
+    category: 'meal',
+    diet: 'nonveg',
+    image: 'https://images.unsplash.com/photo-1529042410759-befb1204b468?w=600&auto=format&fit=crop&q=80',
+    desc: 'Tender minced chicken meatballs tossed in sweet and smoky paprika glaze.',
+    rating: 4.6,
+    ratingCount: 95,
+    orderCount: 64,
+    inStock: false // Out of stock initially to demonstrate snacks shift out-of-stock sign
+  },
+  {
+    id: 'sn5',
+    name: 'Canteen Fresh Garden Salad',
+    price: 70,
+    shift: 'snacks',
+    category: 'meal',
+    diet: 'veg',
+    image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=600&auto=format&fit=crop&q=80',
+    desc: 'Crisp lettuce, cucumbers, cherry tomatoes, olives and lemon vinaigrette dressing.',
+    rating: 4.3,
+    ratingCount: 78,
+    orderCount: 50,
+    inStock: true
+  },
+  {
+    id: 'sn6',
+    name: 'Street Crispy Tacos (2 Pcs)',
+    price: 100,
+    shift: 'snacks',
+    category: 'meal',
+    diet: 'veg',
+    image: 'https://images.unsplash.com/photo-1551504734-5ee1c4a1479b?w=600&auto=format&fit=crop&q=80',
+    desc: 'Crunchy taco shells filled with spiced beans, corn salsa, shredded cheese and sour cream.',
+    rating: 4.5,
+    ratingCount: 118,
+    orderCount: 88,
+    inStock: true
+  },
+  {
+    id: 'sn7',
+    name: 'Wood-Fired Margherita Pizza Slice',
+    price: 120,
+    shift: 'snacks',
+    category: 'meal',
+    diet: 'veg',
+    image: 'https://images.unsplash.com/photo-1604382354936-07c5d9983bd3?w=600&auto=format&fit=crop&q=80',
+    desc: 'Fresh mozzarella, san marzano tomato paste, basil leaves and olive oil drizzle.',
+    rating: 4.8,
+    ratingCount: 290,
+    orderCount: 210,
+    inStock: true
+  },
+
+  // --- 24/7 CHAI, COFFEE & BEVERAGES ---
   {
     id: 'b1',
     name: 'Kadak Masala Chai',
     price: 25,
     shift: 'all_day',
-    type: 'beverage',
+    category: 'beverage',
+    diet: 'veg',
     image: 'https://images.unsplash.com/photo-1576092768241-dec231879fc3?w=600&auto=format&fit=crop&q=80',
-    desc: 'Simmered in brass handi with crushed fresh ginger, green cardamom and rich buffalo milk.'
+    desc: 'Brewed with fresh ginger, cardamom pods and rich buffalo milk.',
+    rating: 4.9,
+    ratingCount: 420,
+    orderCount: 340,
+    inStock: true
   },
   {
     id: 'b2',
     name: 'South Indian Filter Coffee',
     price: 35,
     shift: 'all_day',
-    type: 'beverage',
+    category: 'beverage',
+    diet: 'veg',
     image: 'https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?w=600&auto=format&fit=crop&q=80',
-    desc: 'Traditional slow-dripped chicory brew frothed in a brass davarah and tumbler.'
+    desc: 'Slow-dripped chicory blend frothed in traditional brass davarah.',
+    rating: 4.8,
+    ratingCount: 310,
+    orderCount: 245,
+    inStock: true
   },
   {
     id: 'b3',
     name: 'Kesar Pista Mango Lassi',
     price: 60,
     shift: 'all_day',
-    type: 'beverage',
+    category: 'beverage',
+    diet: 'veg',
     image: 'https://images.unsplash.com/photo-1626074353765-517a681e40be?w=600&auto=format&fit=crop&q=80',
-    desc: 'Velvety chilled yogurt churned with pure Alphonso pulp, Kashmiri saffron and pistachios.'
+    desc: 'Thick yogurt smoothie blended with Alphonso pulp and saffron strands.',
+    rating: 4.7,
+    ratingCount: 195,
+    orderCount: 130,
+    inStock: true
   },
   {
     id: 'b4',
-    name: 'Shahi Shikanji Soda',
+    name: 'Chilled Thums Up / Coke Bottle',
     price: 40,
     shift: 'all_day',
-    type: 'beverage',
-    image: 'https://images.unsplash.com/photo-1513558161293-cdaf765ed2fd?w=600&auto=format&fit=crop&q=80',
-    desc: 'Chilled effervescent soda muddled with freshly pressed nimbu, rock salt and fresh mint.'
-  },
-  {
-    id: 'b5',
-    name: 'Thums Up / Coca-Cola Bottle',
-    price: 40,
-    shift: 'all_day',
-    type: 'beverage',
+    category: 'beverage',
+    diet: 'veg',
     image: 'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?w=600&auto=format&fit=crop&q=80',
-    desc: 'Chilled glass bottle soft drink served icy cold.'
-  },
-
-  // --- Subah Nashta (Breakfast 7:00 AM - 11:30 AM) ---
-  {
-    id: 'bf1',
-    name: 'Crispy Butter Masala Dosa',
-    price: 95,
-    shift: 'breakfast',
-    type: 'meal',
-    image: 'https://images.unsplash.com/photo-1668236543090-82eba5ee5976?w=600&auto=format&fit=crop&q=80',
-    desc: 'Golden roasted crepe stuffed with spiced potato mash, served with coconut dip and sambar.'
-  },
-  {
-    id: 'bf2',
-    name: 'Indori Shahi Poha & Sev',
-    price: 45,
-    shift: 'breakfast',
-    type: 'meal',
-    image: 'https://images.unsplash.com/photo-1626777552726-4a6b54c97e46?w=600&auto=format&fit=crop&q=80',
-    desc: 'Steamed flattened rice tempered with mustard, roasted peanuts, pomegranate and spicy ratlami sev.'
-  },
-  {
-    id: 'bf3',
-    name: 'Amritsari Chole Bhature',
-    price: 120,
-    shift: 'breakfast',
-    type: 'meal',
-    image: 'https://images.unsplash.com/photo-1626132647523-66f5bf380027?w=600&auto=format&fit=crop&q=80',
-    desc: 'Two fluffy golden bhaturas paired with dark spiced chickpeas, pickled green chilies and onions.'
-  },
-  {
-    id: 'bf4',
-    name: 'Steamed Idli & Medu Vada Combo',
-    price: 75,
-    shift: 'breakfast',
-    type: 'meal',
-    image: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=600&auto=format&fit=crop&q=80',
-    desc: 'Two pillow-soft steamed idlis and one crunchy medu vada with hot lentil vegetable stew.'
-  },
-  {
-    id: 'bf5',
-    name: 'Dilli Wali Samosa Chaat',
-    price: 55,
-    shift: 'breakfast',
-    type: 'meal',
-    image: 'https://images.unsplash.com/photo-1601050690597-df0568f70950?w=600&auto=format&fit=crop&q=80',
-    desc: 'Crushed flaky potato samosas layered with spiced chole, sweet tamarind chutney, whipped curd and sev.'
-  },
-
-  // --- Dopahar Dawat (Lunch 11:30 AM - 4:00 PM) ---
-  {
-    id: 'ln1',
-    name: 'Shahi Dal Makhani Thali',
-    price: 180,
-    shift: 'lunch',
-    type: 'meal',
-    image: 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=600&auto=format&fit=crop&q=80',
-    desc: 'Slow-simmered black urad dal with white makhan, jeera rice, 2 tandoori rotis, salad and papad.'
-  },
-  {
-    id: 'ln2',
-    name: 'Paneer Butter Masala + Naan',
-    price: 190,
-    shift: 'lunch',
-    type: 'meal',
-    image: 'https://images.unsplash.com/photo-1631452180519-c014fe946bc7?w=600&auto=format&fit=crop&q=80',
-    desc: 'Tender cottage cheese cubes submerged in silky tomato cashew gravy, served with 2 glazed butter naans.'
-  },
-  {
-    id: 'ln3',
-    name: 'Hyderabadi Veg Dum Biryani',
-    price: 155,
-    shift: 'lunch',
-    type: 'meal',
-    image: 'https://images.unsplash.com/photo-1563379091339-03b21ab4a4f8?w=600&auto=format&fit=crop&q=80',
-    desc: 'Long grain basmati sealed in earthen pot with spiced garden vegetables, mint, salan and creamy raita.'
-  },
-  {
-    id: 'ln4',
-    name: 'Mumbai Special Pav Bhaji',
-    price: 105,
-    shift: 'lunch',
-    type: 'meal',
-    image: 'https://images.unsplash.com/photo-1606491956689-2ea866880c84?w=600&auto=format&fit=crop&q=80',
-    desc: 'Spiced tomato-vegetable mash topped with melting Amul butter slab, served with 2 toasted butter pavs.'
-  },
-  {
-    id: 'ln5',
-    name: 'Dhaba Rajma Chawal Bowl',
-    price: 110,
-    shift: 'lunch',
-    type: 'meal',
-    image: 'https://images.unsplash.com/photo-1589301760014-d929f3979dbc?w=600&auto=format&fit=crop&q=80',
-    desc: 'Slow-cooked Punjabi red kidney beans in thick spiced gravy, served over steaming basmati rice.'
-  },
-
-  // --- Shahi Dawat (Dinner 7:00 PM - 11:00 PM) ---
-  {
-    id: 'dn1',
-    name: 'Amritsari Paneer Bhurji & Paratha',
-    price: 165,
-    shift: 'dinner',
-    type: 'meal',
-    image: 'https://images.unsplash.com/photo-1567188040759-fb8a883dc6d8?w=600&auto=format&fit=crop&q=80',
-    desc: 'Scrambled paneer wok-tossed with ginger, onions, tomatoes and kasuri methi, paired with 2 parathas.'
-  },
-  {
-    id: 'dn2',
-    name: 'Dhaba Egg Curry with Jeera Rice',
-    price: 145,
-    shift: 'dinner',
-    type: 'meal',
-    image: 'https://images.unsplash.com/photo-1596797038530-2c107229654b?w=600&auto=format&fit=crop&q=80',
-    desc: 'Two pan-seared boiled eggs in spiced rustic onion-tomato gravy, served over hot cumin basmati.'
-  },
-  {
-    id: 'dn3',
-    name: 'Yellow Dal Tadka & Jeera Rice',
-    price: 120,
-    shift: 'dinner',
-    type: 'meal',
-    image: 'https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=600&auto=format&fit=crop&q=80',
-    desc: 'Yellow lentils tempered with fried garlic, hing, cumin and whole red chillies, with cumin rice.'
-  },
-  {
-    id: 'dn4',
-    name: 'Tandoori Aloo Paratha Thali',
-    price: 90,
-    shift: 'dinner',
-    type: 'meal',
-    image: 'https://images.unsplash.com/photo-1626132647523-66f5bf380027?w=600&auto=format&fit=crop&q=80',
-    desc: 'Two charred clay-oven potato stuffed parathas served with white churned butter and sweet mango pickle.'
+    desc: 'Crisp, chilled carbonated soft drink served ice-cold.',
+    rating: 4.4,
+    ratingCount: 140,
+    orderCount: 95,
+    inStock: true
   }
 ];
 
+// ==========================================
+// 2. STATE MACHINE & STORAGE CONFIGURATION
+// ==========================================
 const ORDER_STATES = {
   PLACED: 'placed',
   PREPARING: 'preparing',
@@ -198,20 +274,30 @@ const ALLOWED_TRANSITIONS = {
   [ORDER_STATES.COLLECTED]: []
 };
 
-const STORAGE_KEY = 'canteen_shahi_verified_v4';
-const CHANNEL_NAME = 'canteen_shahi_bus_v4';
+// Storage & Sync Keys
+const STORAGE_KEY = 'canteen_shahi_verified_v6';
+const MENU_STORAGE_KEY = 'canteen_menu_data_v6';
+const RATINGS_STORAGE_KEY = 'canteen_user_ratings_v6';
+const CHANNEL_NAME = 'canteen_shahi_bus_v6';
 
 let currentUser = null;
-let activeFilter = 'all';
+let activeCategory = 'all'; // 'all', 'meal', 'beverage'
+let activeDietary = 'all';   // 'all', 'veg', 'nonveg'
+let activeSort = 'default';  // 'default', 'most_ordered', 'most_rated', 'rating_desc', 'price_desc', 'price_asc'
 let cart = {};
 let orders = [];
 
+// Initialize BroadcastChannel for instant cross-tab live synchronization
 let broadcastChannel = null;
 try {
   broadcastChannel = new BroadcastChannel(CHANNEL_NAME);
   broadcastChannel.onmessage = (event) => {
-    if (event.data && event.data.type === 'SYNC_ORDERS') {
+    if (!event.data) return;
+    if (event.data.type === 'SYNC_ORDERS') {
       orders = event.data.payload;
+      refreshCurrentView();
+    } else if (event.data.type === 'SYNC_MENU') {
+      applySavedMenuData(event.data.payload);
       refreshCurrentView();
     }
   };
@@ -223,8 +309,157 @@ window.addEventListener('storage', (e) => {
   if (e.key === STORAGE_KEY || e.key === STORAGE_KEY + '_ping') {
     loadOrdersFromStorage();
     refreshCurrentView();
+  } else if (e.key === MENU_STORAGE_KEY) {
+    loadMenuData();
+    refreshCurrentView();
   }
 });
+
+// Toast Notification Controller
+let toastTimer = null;
+function showToast(message, icon = 'sparkles') {
+  const toast = document.getElementById('toast-notification');
+  const toastText = document.getElementById('toast-text');
+  const toastIconWrap = document.getElementById('toast-icon-wrap');
+  if (!toast || !toastText) return;
+
+  toastText.textContent = message;
+  if (toastIconWrap) {
+    toastIconWrap.innerHTML = `<i data-lucide="${icon}" class="w-4 h-4"></i>`;
+    lucide.createIcons();
+  }
+
+  toast.classList.add('show');
+  if (toastTimer) clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    toast.classList.remove('show');
+  }, 3200);
+}
+
+// User Rating Storage
+function getUserRatings() {
+  try {
+    const raw = localStorage.getItem(RATINGS_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch (e) {
+    return {};
+  }
+}
+
+function saveUserRatings(ratings) {
+  localStorage.setItem(RATINGS_STORAGE_KEY, JSON.stringify(ratings));
+}
+
+// Menu Customization Storage (ratings, orderCount, inStock availability)
+function saveMenuData(broadcast = true) {
+  const customData = INDIAN_MENU.map(i => ({
+    id: i.id,
+    rating: i.rating,
+    ratingCount: i.ratingCount,
+    orderCount: i.orderCount,
+    inStock: i.inStock
+  }));
+  localStorage.setItem(MENU_STORAGE_KEY, JSON.stringify(customData));
+  if (broadcast && broadcastChannel) {
+    broadcastChannel.postMessage({ type: 'SYNC_MENU', payload: customData });
+  }
+}
+
+function applySavedMenuData(customData) {
+  if (!Array.isArray(customData)) return;
+  customData.forEach(s => {
+    const item = INDIAN_MENU.find(m => m.id === s.id);
+    if (item) {
+      if (s.rating !== undefined) item.rating = s.rating;
+      if (s.ratingCount !== undefined) item.ratingCount = s.ratingCount;
+      if (s.orderCount !== undefined) item.orderCount = s.orderCount;
+      if (s.inStock !== undefined) item.inStock = s.inStock;
+    }
+  });
+}
+
+function loadMenuData() {
+  const raw = localStorage.getItem(MENU_STORAGE_KEY);
+  if (raw) {
+    try {
+      applySavedMenuData(JSON.parse(raw));
+    } catch (e) {
+      console.warn('Failed to parse saved menu data:', e);
+    }
+  }
+}
+
+// Item Sold Count (Real-time orders + pseudo base count)
+function getItemSoldCount(itemId) {
+  return orders.reduce((sum, o) => {
+    const itm = o.items.find(i => i.id === itemId);
+    return sum + (itm ? itm.qty : 0);
+  }, 0);
+}
+
+function getItemTotalOrders(item) {
+  return (item.orderCount || 0) + getItemSoldCount(item.id);
+}
+
+// ==========================================
+// 3. RATING SYSTEM & STOCK CONTROLLER
+// ==========================================
+function rateDish(itemId, stars, event) {
+  if (event) {
+    event.stopPropagation();
+    event.preventDefault();
+  }
+  const item = INDIAN_MENU.find(m => m.id === itemId);
+  if (!item) return;
+
+  const userRatings = getUserRatings();
+  const previousRating = userRatings[itemId];
+
+  let count = item.ratingCount || 10;
+  let sum = (item.rating || 4.5) * count;
+
+  if (previousRating) {
+    sum = sum - previousRating + stars;
+  } else {
+    sum += stars;
+    count += 1;
+  }
+
+  const updatedRating = Math.round((sum / count) * 10) / 10;
+  item.rating = updatedRating;
+  item.ratingCount = count;
+  userRatings[itemId] = stars;
+
+  saveUserRatings(userRatings);
+  saveMenuData(true);
+
+  showToast(`⭐ Rated "${item.name}" ${stars} Star${stars > 1 ? 's' : ''}! Thank you for dining.`);
+  renderMenu();
+  renderCustomerTracker();
+
+  if (currentUser && currentUser.role === 'manager') {
+    renderManagerDashboard();
+  }
+}
+
+function toggleItemStock(itemId) {
+  const item = INDIAN_MENU.find(m => m.id === itemId);
+  if (!item) return;
+
+  item.inStock = !item.inStock;
+  if (!item.inStock && cart[itemId]) {
+    delete cart[itemId];
+  }
+
+  saveMenuData(true);
+  showToast(item.inStock
+    ? `✓ "${item.name}" marked IN STOCK`
+    : `✕ "${item.name}" marked OUT OF STOCK`,
+    item.inStock ? 'check' : 'ban'
+  );
+
+  refreshCurrentView();
+}
 
 function saveOrdersToStorage(broadcast = true) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(orders));
@@ -257,10 +492,10 @@ function seedInitialDemoData() {
       token: 'T-101',
       customerName: 'Aarav Sharma',
       items: [
-        { id: 'bf1', name: 'Crispy Butter Masala Dosa', price: 95, qty: 1 },
-        { id: 'b1', name: 'Kadak Masala Chai', price: 25, qty: 2 }
+        { id: 'ln1', name: 'Crispy Paper-Thin Rava Dosa', price: 110, qty: 1, diet: 'veg' },
+        { id: 'b1', name: 'Kadak Masala Chai', price: 25, qty: 2, diet: 'veg' }
       ],
-      total: 145,
+      total: 160,
       status: ORDER_STATES.PREPARING,
       createdAt: now - 9 * 60 * 1000,
       prepStartedAt: now - 6 * 60 * 1000,
@@ -270,12 +505,12 @@ function seedInitialDemoData() {
     {
       id: 'ORD-102',
       token: 'T-102',
-      customerName: 'Meera Rajput',
+      customerName: 'Vikram Malhotra',
       items: [
-        { id: 'bf3', name: 'Amritsari Chole Bhature', price: 120, qty: 1 },
-        { id: 'b3', name: 'Kesar Pista Mango Lassi', price: 60, qty: 1 }
+        { id: 'sn1', name: 'Crispy Chicken Fried Bites', price: 160, qty: 1, diet: 'nonveg' },
+        { id: 'b4', name: 'Chilled Thums Up / Coke Bottle', price: 40, qty: 1, diet: 'veg' }
       ],
-      total: 180,
+      total: 200,
       status: ORDER_STATES.READY,
       createdAt: now - 16 * 60 * 1000,
       prepStartedAt: now - 12 * 60 * 1000,
@@ -287,7 +522,7 @@ function seedInitialDemoData() {
       token: 'T-103',
       customerName: 'Priya Iyer',
       items: [
-        { id: 'ln2', name: 'Paneer Butter Masala + Naan', price: 190, qty: 1 }
+        { id: 'ln5', name: 'Desi Ghee Aloo Paratha Thali', price: 95, qty: 2, diet: 'veg' }
       ],
       total: 190,
       status: ORDER_STATES.COLLECTED,
@@ -295,6 +530,20 @@ function seedInitialDemoData() {
       prepStartedAt: now - 44 * 60 * 1000,
       readyAt: now - 30 * 60 * 1000,
       collectedAt: now - 28 * 60 * 1000
+    },
+    {
+      id: 'ORD-104',
+      token: 'T-104',
+      customerName: 'Aarav Sharma',
+      items: [
+        { id: 'sn2', name: 'Loaded Double Cheese Burger', price: 130, qty: 1, diet: 'nonveg' }
+      ],
+      total: 130,
+      status: ORDER_STATES.COLLECTED,
+      createdAt: now - 120 * 60 * 1000,
+      prepStartedAt: now - 114 * 60 * 1000,
+      readyAt: now - 105 * 60 * 1000,
+      collectedAt: now - 101 * 60 * 1000
     }
   ];
   saveOrdersToStorage(true);
@@ -317,10 +566,13 @@ function playChime() {
       osc.stop(now + idx * 0.1 + 0.4);
     });
   } catch (e) {
-    console.log('Audio chime waiting for user interaction.');
+    console.log('Audio chime deferred until user interaction.');
   }
 }
 
+// ==========================================
+// 4. MEAL SHIFT & FILTER CONTROLLERS
+// ==========================================
 function getActiveMealShift() {
   const selector = document.getElementById('meal-time-selector');
   const override = selector ? selector.value : 'auto';
@@ -328,22 +580,44 @@ function getActiveMealShift() {
   if (override !== 'auto') return override;
 
   const hour = new Date().getHours();
-  const minute = new Date().getMinutes();
-  const timeDecimal = hour + minute / 60;
-
-  if (timeDecimal >= 7 && timeDecimal < 11.5) return 'breakfast';
-  if (timeDecimal >= 11.5 && timeDecimal < 16) return 'lunch';
-  if (timeDecimal >= 19 && timeDecimal <= 23) return 'dinner';
-  return 'lunch';
+  // Lunch between 11:30 AM and 4:30 PM, Snacks in the evening
+  if (hour >= 11 && hour < 16) return 'lunch';
+  return 'snacks';
 }
 
-function filterMenu(type) {
-  activeFilter = type;
-  document.querySelectorAll('.cat-pill').forEach(pill => pill.classList.remove('active'));
+function setDietaryFilter(diet) {
+  activeDietary = diet;
+  document.querySelectorAll('.diet-btn').forEach(b => b.classList.remove('active'));
+  const activeBtn = document.getElementById(`btn-diet-${diet}`);
+  if (activeBtn) activeBtn.classList.add('active');
+  renderMenu();
+}
+
+function filterCategory(cat) {
+  activeCategory = cat;
+  document.querySelectorAll('.cat-pill').forEach(b => b.classList.remove('active'));
   event.target.classList.add('active');
   renderMenu();
 }
 
+function setSortFilter(sortType) {
+  activeSort = sortType;
+
+  // Sync dropdown selector
+  const sel = document.getElementById('menu-sort-selector');
+  if (sel) sel.value = sortType;
+
+  // Sync quick sort pills
+  document.querySelectorAll('.sort-pill').forEach(btn => btn.classList.remove('active'));
+  const activePill = document.getElementById(`sort-pill-${sortType}`);
+  if (activePill) activePill.classList.add('active');
+
+  renderMenu();
+}
+
+// ==========================================
+// 5. ROLE LOGIN
+// ==========================================
 function loginAs(role, name) {
   currentUser = { role, name };
   document.getElementById('header-user-tag').textContent = `Role: ${name} (${role.toUpperCase()})`;
@@ -380,67 +654,203 @@ document.getElementById('btn-logout').addEventListener('click', () => {
   document.getElementById('view-login').classList.remove('hidden');
 });
 
+// ==========================================
+// 6. CUSTOMER VIEW RENDERER
+// ==========================================
 function renderMenu() {
   const grid = document.getElementById('menu-grid');
   if (!grid) return;
 
   const currentShift = getActiveMealShift();
-  document.getElementById('active-shift-badge').textContent = currentShift;
-  document.getElementById('menu-shift-subtext').textContent = `Royal ${currentShift.toUpperCase()} Service • Authentic Canteen Flavors`;
+  document.getElementById('active-shift-badge').textContent = currentShift === 'lunch' ? 'Lunch / Meals' : 'Snacks & Bites';
+  document.getElementById('menu-shift-subtext').textContent = currentShift === 'lunch'
+    ? 'Traditional hearty meals (Reference: Rava Dosa, Oats Idly, Poha, Parathas)'
+    : 'Evening bites & fast foods (Reference: Crispy Chicken, Burgers, Pasta, Pizza)';
 
+  // 1. Filter dishes by Shift, Dietary and Category
   const availableItems = INDIAN_MENU.filter(item => {
-    const isBeverage = item.type === 'beverage';
+    const isBeverage = item.category === 'beverage';
     const matchesShift = item.shift === currentShift || item.shift === 'all_day';
+
     if (!matchesShift && !isBeverage) return false;
-    if (activeFilter === 'beverages') return isBeverage;
-    if (activeFilter === 'meal') return !isBeverage;
+
+    // Dietary filter
+    if (activeDietary === 'veg' && item.diet !== 'veg') return false;
+    if (activeDietary === 'nonveg' && item.diet !== 'nonveg') return false;
+
+    // Category filter
+    if (activeCategory === 'meal' && isBeverage) return false;
+    if (activeCategory === 'beverage' && !isBeverage) return false;
+
     return true;
   });
 
-  grid.innerHTML = availableItems.map(item => `
-    <div class="menu-card rounded-2xl overflow-hidden flex flex-col justify-between">
-      <div class="relative w-full h-44 bg-stone-900 overflow-hidden">
-        <img 
-          src="${item.image}" 
-          alt="${item.name}" 
-          class="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
-          onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=600&auto=format&fit=crop&q=80';"
-        />
-        <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent"></div>
-        <span class="absolute top-2.5 left-2.5 bg-black/80 backdrop-blur-md text-amber-300 text-[10px] uppercase font-cinzel font-bold tracking-widest px-2.5 py-1 rounded-md border border-amber-500/30">
-          ${item.type === 'beverage' ? '24/7 Chai' : item.shift}
-        </span>
-        <span class="absolute bottom-2.5 right-2.5 bg-gradient-to-r from-amber-500 to-yellow-500 text-stone-950 font-black text-sm px-3 py-0.5 rounded-lg shadow-lg font-mono">
-          ₹${item.price}
-        </span>
-      </div>
+  // 2. Sort dishes according to activeSort option
+  if (activeSort === 'most_ordered') {
+    availableItems.sort((a, b) => getItemTotalOrders(b) - getItemTotalOrders(a));
+  } else if (activeSort === 'most_rated') {
+    availableItems.sort((a, b) => (b.ratingCount || 0) - (a.ratingCount || 0));
+  } else if (activeSort === 'rating_desc') {
+    availableItems.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+  } else if (activeSort === 'price_desc') {
+    availableItems.sort((a, b) => b.price - a.price);
+  } else if (activeSort === 'price_asc') {
+    availableItems.sort((a, b) => a.price - b.price);
+  }
 
-      <div class="p-4 flex flex-col flex-1 justify-between">
-        <div>
-          <h4 class="font-cinzel font-bold text-sm text-amber-100 tracking-wide line-clamp-1">${item.name}</h4>
-          <p class="text-xs text-amber-200/60 mt-1.5 line-clamp-2 font-light leading-relaxed">${item.desc}</p>
+  if (availableItems.length === 0) {
+    grid.innerHTML = `
+      <div class="col-span-full py-12 text-center text-amber-200/50 font-cinzel">
+        <i data-lucide="filter" class="w-8 h-8 mx-auto mb-2 text-amber-400/50"></i>
+        No dishes available for the selected shift and filters.
+      </div>
+    `;
+    lucide.createIcons();
+    return;
+  }
+
+  const userRatings = getUserRatings();
+
+  grid.innerHTML = availableItems.map(item => {
+    const totalSold = getItemTotalOrders(item);
+    const userRated = userRatings[item.id];
+
+    return `
+      <div class="menu-card rounded-2xl overflow-hidden flex flex-col justify-between group">
+        
+        <!-- Enhanced Food Item Thumbnail Container -->
+        <div class="thumb-container relative">
+          <img 
+            src="${item.image}" 
+            alt="${item.name}" 
+            class="thumb-image ${!item.inStock ? 'out-of-stock-img' : ''}"
+            onerror="this.onerror=null; this.src='https://images.unsplash.com/photo-1546833999-b9f581a1996d?w=600&auto=format&fit=crop&q=80';"
+            loading="lazy"
+          />
+          <div class="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-black/10"></div>
+          
+          <!-- Top Left Badges: FSSAI Dietary & Meal Shift -->
+          <div class="absolute top-2.5 left-2.5 flex items-center gap-1.5 z-10">
+            <span class="fssai-badge ${item.diet === 'veg' ? 'fssai-badge-veg' : 'fssai-badge-nonveg'}" title="${item.diet === 'veg' ? 'Pure Vegetarian' : 'Non-Vegetarian'}">
+              <span class="dot"></span>
+            </span>
+            <span class="bg-black/80 backdrop-blur-md text-amber-300 text-[10px] uppercase font-cinzel font-bold tracking-wider px-2 py-0.5 rounded-md border border-amber-500/30">
+              ${item.category === 'beverage' ? '24/7 Chai' : item.shift}
+            </span>
+          </div>
+
+          <!-- Top Right: Rating Pill on Thumbnail -->
+          <div class="absolute top-2.5 right-2.5 z-10">
+            <div class="thumb-rating-pill flex items-center gap-1 px-2 py-0.5 rounded-lg text-amber-300">
+              <i data-lucide="star" class="w-3.5 h-3.5 fill-amber-400 text-amber-400"></i>
+              <span class="font-bold text-xs font-mono">${item.rating.toFixed(1)}</span>
+              <span class="text-[10px] text-amber-200/60 font-mono">(${item.ratingCount})</span>
+            </div>
+          </div>
+
+          <!-- Bottom Left: Most Ordered / Order Frequency Tag -->
+          <div class="absolute bottom-2.5 left-2.5 z-10">
+            <span class="bg-black/80 backdrop-blur-md text-amber-200/80 text-[10px] font-mono px-2 py-0.5 rounded border border-amber-500/25 flex items-center gap-1">
+              <i data-lucide="flame" class="w-3 h-3 text-amber-400"></i>
+              <span>${totalSold} ordered</span>
+            </span>
+          </div>
+
+          <!-- Bottom Right: Price Tag -->
+          <span class="absolute bottom-2.5 right-2.5 z-10 bg-gradient-to-r from-amber-500 to-yellow-500 text-stone-950 font-black text-sm px-3 py-0.5 rounded-lg shadow-lg font-mono">
+            ₹${item.price}
+          </span>
+
+          <!-- OUT OF STOCK SIGN ON THUMBNAIL (When item is unavailable) -->
+          ${!item.inStock ? `
+            <div class="out-of-stock-overlay">
+              <div class="out-of-stock-sign">
+                <i data-lucide="ban" class="w-4 h-4"></i>
+                OUT OF STOCK
+              </div>
+              <span class="text-[10px] text-rose-200 font-cinzel font-semibold tracking-wider mt-1.5 uppercase drop-shadow">
+                Kitchen Unavailable
+              </span>
+            </div>
+          ` : ''}
         </div>
 
-        <div class="flex items-center justify-between mt-4 pt-3 border-t border-amber-500/15">
-          <span class="text-[10px] font-cinzel uppercase text-amber-300/50">${item.type}</span>
-          <div class="flex items-center gap-2">
-            ${cart[item.id] ? `
-              <button onclick="updateCart('${item.id}', -1)" class="w-6 h-6 flex items-center justify-center rounded-lg bg-stone-800 text-amber-300 font-bold hover:bg-stone-700 transition">-</button>
-              <span class="text-xs font-bold text-amber-200 px-1 font-mono">${cart[item.id]}</span>
-            ` : ''}
-            <button onclick="updateCart('${item.id}', 1)" class="px-3 py-1.5 text-xs font-bold rounded-xl royal-btn-gold flex items-center gap-1 shadow-md transition">
-              <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add
-            </button>
+        <!-- Food Item Details & Rating Interaction -->
+        <div class="p-4 flex flex-col flex-1 justify-between">
+          <div>
+            <div class="flex items-start justify-between gap-1">
+              <h4 class="font-cinzel font-bold text-sm text-amber-100 tracking-wide line-clamp-1" title="${item.name}">${item.name}</h4>
+            </div>
+            <p class="text-xs text-amber-200/60 mt-1 line-clamp-2 font-light leading-relaxed">${item.desc}</p>
+            
+            <!-- 5-Star Interactive Rating System Row -->
+            <div class="flex items-center justify-between mt-3 pt-2 border-t border-amber-500/10">
+              <div class="flex items-center gap-1">
+                <div class="flex items-center text-amber-400">
+                  ${[1, 2, 3, 4, 5].map(star => `
+                    <button 
+                      onclick="rateDish('${item.id}', ${star}, event)" 
+                      title="Rate ${star} star${star > 1 ? 's' : ''}" 
+                      class="star-btn p-0.5"
+                    >
+                      <i data-lucide="star" class="w-3.5 h-3.5 ${star <= Math.round(item.rating) ? 'fill-amber-400 text-amber-400' : 'text-stone-600'}"></i>
+                    </button>
+                  `).join('')}
+                </div>
+                <span class="text-[11px] font-bold text-amber-300 font-mono ml-1">${item.rating.toFixed(1)}</span>
+                <span class="text-[10px] text-amber-200/50 font-mono">(${item.ratingCount} reviews)</span>
+              </div>
+              <div class="text-[10px] text-amber-300/80 font-cinzel">
+                ${userRated ? `
+                  <span class="text-emerald-400 font-semibold flex items-center gap-1">
+                    <i data-lucide="check" class="w-3 h-3"></i> You: ★${userRated}
+                  </span>
+                ` : `
+                  <span class="text-amber-200/50">Tap to rate</span>
+                `}
+              </div>
+            </div>
+          </div>
+
+          <!-- Bottom Action Row: Diet Badge and Add to Cart Button -->
+          <div class="flex items-center justify-between mt-4 pt-3 border-t border-amber-500/15">
+            <span class="text-[10px] font-cinzel uppercase ${item.diet === 'veg' ? 'text-emerald-400' : 'text-rose-400'} flex items-center gap-1">
+              <span class="w-1.5 h-1.5 rounded-full ${item.diet === 'veg' ? 'bg-emerald-400' : 'bg-rose-400'}"></span>
+              ${item.diet === 'veg' ? 'Pure Veg' : 'Non-Veg'}
+            </span>
+
+            <div class="flex items-center gap-2">
+              ${!item.inStock ? `
+                <button disabled class="px-3.5 py-1.5 text-xs font-semibold rounded-xl bg-stone-900/90 text-rose-300/70 border border-rose-500/30 cursor-not-allowed flex items-center gap-1 shadow-inner">
+                  <i data-lucide="ban" class="w-3.5 h-3.5 text-rose-400"></i> Sold Out
+                </button>
+              ` : cart[item.id] ? `
+                <button onclick="updateCart('${item.id}', -1)" class="w-6 h-6 flex items-center justify-center rounded-lg bg-stone-800 text-amber-300 font-bold hover:bg-stone-700 transition">-</button>
+                <span class="text-xs font-bold text-amber-200 px-1 font-mono">${cart[item.id]}</span>
+                <button onclick="updateCart('${item.id}', 1)" class="w-6 h-6 flex items-center justify-center rounded-lg bg-stone-800 text-amber-300 font-bold hover:bg-stone-700 transition">+</button>
+              ` : `
+                <button onclick="updateCart('${item.id}', 1)" class="px-3 py-1.5 text-xs font-bold rounded-xl royal-btn-gold flex items-center gap-1 shadow-md transition">
+                  <i data-lucide="plus" class="w-3.5 h-3.5"></i> Add
+                </button>
+              `}
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 
   lucide.createIcons();
 }
 
 function updateCart(itemId, delta) {
+  const item = INDIAN_MENU.find(m => m.id === itemId);
+  if (!item || !item.inStock) {
+    if (cart[itemId]) delete cart[itemId];
+    renderCartUI();
+    return;
+  }
+
   cart[itemId] = (cart[itemId] || 0) + delta;
   if (cart[itemId] <= 0) delete cart[itemId];
   renderCartUI();
@@ -455,7 +865,7 @@ function renderCartUI() {
   const totalQty = Object.values(cart).reduce((a, b) => a + b, 0);
   const totalPrice = Object.keys(cart).reduce((acc, id) => {
     const item = INDIAN_MENU.find(m => m.id === id);
-    return acc + (item.price * cart[id]);
+    return acc + (item ? (item.price * cart[id]) : 0);
   }, 0);
 
   document.getElementById('cart-pill').textContent = `Cart: ${totalQty} items`;
@@ -471,7 +881,7 @@ function placeNewOrder() {
 
   const orderItems = itemKeys.map(id => {
     const item = INDIAN_MENU.find(m => m.id === id);
-    return { id: item.id, name: item.name, price: item.price, qty: cart[id] };
+    return { id: item.id, name: item.name, price: item.price, qty: cart[id], diet: item.diet };
   });
 
   const total = orderItems.reduce((acc, i) => acc + (i.price * i.qty), 0);
@@ -492,6 +902,7 @@ function placeNewOrder() {
   orders.unshift(newOrder);
   saveOrdersToStorage(true);
   clearCart();
+  showToast(`Token ${newOrder.token} placed successfully! Shahi Kitchen is notified.`, 'check');
   renderCustomerTracker();
 }
 
@@ -506,14 +917,16 @@ function renderCustomerTracker() {
       <div class="p-4 royal-glass-card rounded-2xl text-xs flex items-center gap-3">
         <i data-lucide="sparkles" class="w-5 h-5 text-amber-400 flex-shrink-0"></i>
         <div>
-          <span class="font-cinzel font-bold text-amber-200">No active tokens for ${currentUser.name}.</span>
-          <p class="text-amber-200/60 mt-0.5">Select your items from the active meal shift below and place an order.</p>
+          <span class="font-cinzel font-bold text-amber-200">No active culinary tokens for ${currentUser.name}.</span>
+          <p class="text-amber-200/60 mt-0.5">Select your items above and place an order to see live kitchen preparation.</p>
         </div>
       </div>
     `;
     lucide.createIcons();
     return;
   }
+
+  const userRatings = getUserRatings();
 
   container.innerHTML = myOrders.map(order => {
     const isPlaced = order.status === ORDER_STATES.PLACED;
@@ -561,11 +974,40 @@ function renderCustomerTracker() {
           </div>
         </div>
 
-        <div class="mt-3.5 flex flex-wrap items-center justify-between text-xs text-amber-100/80 bg-black/40 p-3 rounded-xl border border-amber-500/10">
-          <div><strong class="text-amber-300 font-cinzel">Dishes:</strong> ${order.items.map(i => `${i.name} (x${i.qty})`).join(', ')}</div>
+        <!-- Dishes List and Rating Prompts -->
+        <div class="mt-3.5 bg-black/40 p-3 rounded-xl border border-amber-500/10 space-y-2">
+          <div class="flex flex-wrap items-center justify-between text-xs text-amber-100/80">
+            <div><strong class="text-amber-300 font-cinzel">Dishes:</strong> ${order.items.map(i => `${i.name} (x${i.qty})`).join(', ')}</div>
+            ${isCompleted ? `
+              <div class="text-amber-300 text-[11px] font-cinzel flex items-center gap-1.5 mt-1 sm:mt-0">
+                <i data-lucide="crown" class="w-3.5 h-3.5 text-amber-400"></i> Served with Royal Courtesy!
+              </div>
+            ` : ''}
+          </div>
+
           ${isCompleted ? `
-            <div class="text-amber-300 text-[11px] font-cinzel flex items-center gap-1.5 mt-1 sm:mt-0">
-              <i data-lucide="crown" class="w-3.5 h-3.5 text-amber-400"></i> Served with Royal Courtesy!
+            <div class="pt-2 border-t border-amber-500/10 flex flex-wrap items-center gap-3 text-xs">
+              <span class="text-amber-200/70 font-cinzel text-[11px]">Rate your served dishes:</span>
+              <div class="flex flex-wrap gap-2">
+                ${order.items.map(i => {
+                  const dish = INDIAN_MENU.find(m => m.id === i.id);
+                  const currentRate = dish ? dish.rating : 4.5;
+                  const personal = userRatings[i.id];
+                  return `
+                    <div class="flex items-center gap-1 bg-black/60 px-2 py-1 rounded-lg border border-amber-500/20">
+                      <span class="text-[11px] text-amber-200 font-medium">${i.name}:</span>
+                      <div class="flex items-center text-amber-400">
+                        ${[1, 2, 3, 4, 5].map(star => `
+                          <button onclick="rateDish('${i.id}', ${star}, event)" class="star-btn p-0.5">
+                            <i data-lucide="star" class="w-3 h-3 ${star <= (personal || Math.round(currentRate)) ? 'fill-amber-400 text-amber-400' : 'text-stone-600'}"></i>
+                          </button>
+                        `).join('')}
+                      </div>
+                      ${personal ? `<span class="text-[9px] text-emerald-400 font-mono">★${personal}</span>` : ''}
+                    </div>
+                  `;
+                }).join('')}
+              </div>
             </div>
           ` : ''}
         </div>
@@ -581,6 +1023,9 @@ function renderCustomerView() {
   renderCustomerTracker();
 }
 
+// ==========================================
+// 7. KITCHEN DISPLAY SYSTEM (KDS) & STOCK
+// ==========================================
 function transitionOrderStatus(orderId, targetStatus) {
   const order = orders.find(o => o.id === orderId);
   if (!order) return;
@@ -599,12 +1044,33 @@ function transitionOrderStatus(orderId, targetStatus) {
   } else if (targetStatus === ORDER_STATES.READY) {
     order.readyAt = now;
     playChime();
+    showToast(`Order ${order.token} marked READY at Counter!`, 'bell');
   } else if (targetStatus === ORDER_STATES.COLLECTED) {
     order.collectedAt = now;
+    showToast(`Order ${order.token} delivered to ${order.customerName}.`, 'check');
   }
 
   saveOrdersToStorage(true);
   refreshCurrentView();
+}
+
+function renderStaffStockControls() {
+  const container = document.getElementById('staff-stock-toggle-list');
+  if (!container) return;
+
+  container.innerHTML = INDIAN_MENU.map(item => `
+    <button 
+      onclick="toggleItemStock('${item.id}')"
+      class="px-2.5 py-1 rounded-lg text-xs font-medium border flex items-center gap-1.5 transition ${item.inStock ? 'bg-emerald-950/60 border-emerald-500/40 text-emerald-300 hover:bg-emerald-900/60' : 'bg-rose-950/70 border-rose-500/50 text-rose-300 hover:bg-rose-900/70 shadow-sm'}"
+      title="Click to toggle availability"
+    >
+      <span class="w-2 h-2 rounded-full ${item.inStock ? 'bg-emerald-400' : 'bg-rose-500 animate-pulse'}"></span>
+      <span class="font-cinzel">${item.name}</span>
+      <span class="font-mono text-[10px] font-bold ${item.inStock ? 'text-emerald-400' : 'text-rose-400'}">
+        (${item.inStock ? 'IN STOCK' : 'OUT OF STOCK'})
+      </span>
+    </button>
+  `).join('');
 }
 
 function renderKDS() {
@@ -613,6 +1079,8 @@ function renderKDS() {
   const colReady = document.getElementById('col-ready');
   const colCompleted = document.getElementById('col-completed');
   if (!colPlaced) return;
+
+  renderStaffStockControls();
 
   const placed = orders.filter(o => o.status === ORDER_STATES.PLACED);
   const prep = orders.filter(o => o.status === ORDER_STATES.PREPARING);
@@ -644,8 +1112,11 @@ function renderKDS() {
           </div>
           <div class="py-2.5 space-y-1">
             ${order.items.map(i => `
-              <div class="text-xs text-amber-100 flex justify-between font-light">
-                <span>${i.name}</span>
+              <div class="text-xs text-amber-100 flex justify-between font-light items-center">
+                <span class="flex items-center gap-1.5">
+                  <span class="w-1.5 h-1.5 rounded-full ${i.diet === 'veg' ? 'bg-emerald-400' : 'bg-rose-400'}"></span>
+                  ${i.name}
+                </span>
                 <span class="font-bold text-amber-400 font-mono">x${i.qty}</span>
               </div>
             `).join('')}
@@ -661,7 +1132,7 @@ function renderKDS() {
   colPlaced.innerHTML = placed.length === 0 ? `<div class="text-center text-xs text-amber-200/40 py-8 font-cinzel">No new tickets</div>` :
     placed.map(o => createCard(o, `
       <button onclick="transitionOrderStatus('${o.id}', '${ORDER_STATES.PREPARING}')" class="w-full py-1.5 px-3 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-lg transition flex items-center justify-center gap-1 shadow">
-        <span>Start Tandoor Prep</span> &rarr;
+        <span>Start Kitchen Prep</span> &rarr;
       </button>
     `)).join('');
 
@@ -693,40 +1164,81 @@ function renderKDS() {
   lucide.createIcons();
 }
 
+// ==========================================
+// 8. PRECISE MANAGER DASHBOARD & ANALYTICS
+// ==========================================
 function renderManagerDashboard() {
   const totalSales = orders.reduce((acc, o) => acc + o.total, 0);
+  const collectedSales = orders.filter(o => o.status === ORDER_STATES.COLLECTED).reduce((acc, o) => acc + o.total, 0);
+  const pendingSales = totalSales - collectedSales;
   const totalOrdersCount = orders.length;
 
   document.getElementById('mgr-total-sales').textContent = `₹${totalSales}`;
+  document.getElementById('mgr-collected-sales').textContent = `₹${collectedSales}`;
+  document.getElementById('mgr-pending-sales').textContent = `₹${pendingSales}`;
   document.getElementById('mgr-total-orders').textContent = totalOrdersCount;
 
+  // Completion Rate
+  const completedOrders = orders.filter(o => o.status === ORDER_STATES.COLLECTED);
+  const compRate = totalOrdersCount > 0 ? Math.round((completedOrders.length / totalOrdersCount) * 100) : 100;
+  document.getElementById('mgr-completion-rate').textContent = `${compRate}%`;
+
+  // In prep count
+  const inPrepCount = orders.filter(o => o.status === ORDER_STATES.PREPARING).length;
+  document.getElementById('mgr-in-prep-count').textContent = inPrepCount;
+
+  // Prep turnaround speed
   const ordersWithPrep = orders.filter(o => o.prepStartedAt && o.readyAt);
   if (ordersWithPrep.length > 0) {
     const totalMinutes = ordersWithPrep.reduce((acc, o) => acc + ((o.readyAt - o.prepStartedAt) / 60000), 0);
     const avgMinutes = Math.round(totalMinutes / ordersWithPrep.length);
-    document.getElementById('mgr-avg-preptime').textContent = `${avgMinutes} mins`;
+    document.getElementById('mgr-avg-preptime').textContent = `${avgMinutes}m`;
   } else {
     document.getElementById('mgr-avg-preptime').textContent = 'N/A';
   }
 
+  // Overdue count (> 10 mins)
+  const overdueCount = orders.filter(o => {
+    const isPending = o.status === ORDER_STATES.PLACED || o.status === ORDER_STATES.PREPARING;
+    const mins = (Date.now() - o.createdAt) / 60000;
+    return isPending && mins > 10;
+  }).length;
+  document.getElementById('mgr-overdue-count').textContent = overdueCount;
+
+  // Dietary Split (Veg vs Non-Veg Items ordered)
+  let vegItemsCount = 0;
+  let nonvegItemsCount = 0;
   const itemCounts = {};
+
   orders.forEach(o => {
     o.items.forEach(i => {
+      const itemDiet = i.diet || 'veg';
+      if (itemDiet === 'veg') vegItemsCount += i.qty;
+      else nonvegItemsCount += i.qty;
+
       itemCounts[i.name] = (itemCounts[i.name] || 0) + i.qty;
     });
   });
 
+  const totalDietItems = vegItemsCount + nonvegItemsCount;
+  const vegPct = totalDietItems > 0 ? Math.round((vegItemsCount / totalDietItems) * 100) : 0;
+  const nonvegPct = totalDietItems > 0 ? Math.round((nonvegItemsCount / totalDietItems) * 100) : 0;
+  document.getElementById('mgr-veg-percent').textContent = `${vegPct}%`;
+  document.getElementById('mgr-nonveg-percent').textContent = `${nonvegPct}%`;
+
+  // Top dish
   let topItemName = 'None';
   let maxCount = 0;
   for (const [name, count] of Object.entries(itemCounts)) {
     if (count > maxCount) {
       maxCount = count;
-      topItemName = `${name} (${count} portions)`;
+      topItemName = `${name} (${count})`;
     }
   }
   document.getElementById('mgr-top-item').textContent = topItemName;
 
   renderManagerUserBreakdown();
+  renderDishMatrix();
   renderManagerPrepLogs();
 }
 
@@ -767,14 +1279,78 @@ function renderManagerUserBreakdown() {
       return `
         <tr class="hover:bg-amber-500/5 transition">
           <td class="p-3.5 font-bold text-amber-200 font-cinzel">${u.name}</td>
-          <td class="p-3.5 text-amber-100 font-mono">${u.orderCount} order(s)</td>
-          <td class="p-3.5 font-extrabold text-amber-400 font-mono">₹${u.totalSpent}</td>
-          <td class="p-3.5 text-amber-200/70 font-mono">₹${avgValue}</td>
+          <td class="p-3.5 text-amber-100">${u.orderCount} token(s)</td>
+          <td class="p-3.5 font-extrabold text-amber-400">₹${u.totalSpent}</td>
+          <td class="p-3.5 text-amber-200/70">₹${avgValue}</td>
           <td class="p-3.5 text-amber-100/70 max-w-xs truncate" title="${itemsPurchasedList}">${itemsPurchasedList}</td>
-          <td class="p-3.5 text-amber-300/50 font-mono">${dateStr}</td>
+          <td class="p-3.5 text-amber-300/50">${dateStr}</td>
         </tr>
       `;
     }).join('');
+}
+
+function renderDishMatrix() {
+  const table = document.getElementById('mgr-dish-matrix-table');
+  if (!table) return;
+
+  // Render all dishes with their sales, rating, and stock toggle
+  const dishSales = {};
+  INDIAN_MENU.forEach(item => {
+    dishSales[item.id] = {
+      id: item.id,
+      name: item.name,
+      diet: item.diet,
+      price: item.price,
+      rating: item.rating,
+      ratingCount: item.ratingCount,
+      inStock: item.inStock,
+      qtySold: 0,
+      revenue: 0
+    };
+  });
+
+  orders.forEach(o => {
+    o.items.forEach(i => {
+      if (dishSales[i.id]) {
+        dishSales[i.id].qtySold += i.qty;
+        dishSales[i.id].revenue += (i.price * i.qty);
+      }
+    });
+  });
+
+  const sortedDishes = Object.values(dishSales).sort((a, b) => b.qtySold - a.qtySold);
+
+  table.innerHTML = sortedDishes.map(d => `
+    <tr class="hover:bg-amber-500/5 transition">
+      <td class="p-3 font-semibold text-amber-100 truncate max-w-[150px]" title="${d.name}">${d.name}</td>
+      <td class="p-3">
+        <span class="inline-flex items-center gap-1 text-[10px] font-bold ${d.diet === 'veg' ? 'text-emerald-400' : 'text-rose-400'}">
+          <span class="w-1.5 h-1.5 rounded-full ${d.diet === 'veg' ? 'bg-emerald-400' : 'bg-rose-400'}"></span>
+          ${d.diet === 'veg' ? 'Veg' : 'Non-Veg'}
+        </span>
+      </td>
+      <td class="p-3 text-amber-200/70">₹${d.price}</td>
+      <td class="p-3 text-amber-300 font-mono">
+        <span class="inline-flex items-center gap-1">
+          <i data-lucide="star" class="w-3 h-3 fill-amber-400 text-amber-400"></i>
+          <span>${d.rating.toFixed(1)}</span>
+          <span class="text-[10px] text-amber-200/50">(${d.ratingCount})</span>
+        </span>
+      </td>
+      <td class="p-3 font-bold text-amber-300">${d.qtySold}</td>
+      <td class="p-3 font-extrabold text-amber-400">₹${d.revenue}</td>
+      <td class="p-3 text-center">
+        <button 
+          onclick="toggleItemStock('${d.id}')" 
+          class="px-2.5 py-1 text-[10px] font-bold rounded-lg border transition ${d.inStock ? 'bg-emerald-950/80 border-emerald-500/40 text-emerald-300 hover:bg-emerald-900' : 'bg-rose-950/80 border-rose-500/40 text-rose-300 hover:bg-rose-900'}"
+        >
+          ${d.inStock ? '✓ In Stock' : '✕ Out of Stock'}
+        </button>
+      </td>
+    </tr>
+  `).join('');
+
+  lucide.createIcons();
 }
 
 function renderManagerPrepLogs() {
@@ -784,7 +1360,7 @@ function renderManagerPrepLogs() {
   logTable.innerHTML = orders.map(o => {
     const prepTime = (o.prepStartedAt && o.readyAt)
       ? `${Math.round((o.readyAt - o.prepStartedAt) / 60000)} mins`
-      : o.prepStartedAt ? 'In Tandoor...' : 'Queued';
+      : o.prepStartedAt ? 'In Kitchen...' : 'Queued';
 
     const handoverTime = (o.createdAt && o.collectedAt)
       ? `${Math.round((o.collectedAt - o.createdAt) / 60000)} mins`
@@ -792,18 +1368,19 @@ function renderManagerPrepLogs() {
 
     return `
       <tr class="hover:bg-amber-500/5 transition">
-        <td class="p-3.5 font-bold text-amber-400">${o.token}</td>
-        <td class="p-3.5 text-amber-100 font-cinzel">${o.customerName}</td>
-        <td class="p-3.5 text-amber-200/70 truncate max-w-xs">${o.items.map(i => `${i.name} (${i.qty})`).join(', ')}</td>
-        <td class="p-3.5 font-bold text-amber-300 font-mono">₹${o.total}</td>
-        <td class="p-3.5 text-blue-400 font-mono font-medium">${prepTime}</td>
-        <td class="p-3.5 text-purple-400 font-mono font-medium">${handoverTime}</td>
-        <td class="p-3.5 uppercase font-bold text-[10px] text-amber-400 font-cinzel">${o.status}</td>
+        <td class="p-3 font-bold text-amber-400">${o.token}</td>
+        <td class="p-3 text-amber-100 font-cinzel">${o.customerName}</td>
+        <td class="p-3 text-blue-400 font-medium">${prepTime}</td>
+        <td class="p-3 text-purple-400 font-medium">${handoverTime}</td>
+        <td class="p-3 uppercase font-bold text-[10px] text-amber-400 font-cinzel">${o.status}</td>
       </tr>
     `;
   }).join('');
 }
 
+// ==========================================
+// 9. VIEW CONTROLLER & AUTO-REFRESH
+// ==========================================
 function refreshCurrentView() {
   if (!currentUser) return;
   if (currentUser.role === 'customer') {
@@ -827,5 +1404,6 @@ setInterval(() => {
 
 document.addEventListener('DOMContentLoaded', () => {
   loadOrdersFromStorage();
+  loadMenuData();
   lucide.createIcons();
 });
